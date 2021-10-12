@@ -17,24 +17,44 @@ namespace PeerJS.Hubs
             this.connectinInfo = info;
         }
 
-        public async Task JoinRoom(string roomID, string peerID)
+        public async Task JoinRoom(string roomID, string peerID, string username)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, roomID);
 
             connectinInfo.Add(Context.ConnectionId, new ConnectionInfo
             {
                 peerID = peerID,
-                roomID = roomID
+                roomID = roomID,
+                username = username
             });
+
+            await Clients.Group(roomID).SendAsync("UserList", extractRoomList(roomID));
 
             await Clients.Group(roomID).SendAsync("UserConnected", peerID);
         }
+
+        private Dictionary<string, string> extractRoomList(string room)
+        {
+            Dictionary<string, string> ret = new Dictionary<string, string>();
+
+            connectinInfo.ToList().ForEach(delegate (KeyValuePair<string, ConnectionInfo> conn)
+            {
+                if (conn.Value.roomID == room)
+                {
+                    ret.Add(conn.Value.username, conn.Key);
+                }
+            });
+
+            return ret;
+
+        }
+
 
         public async Task Message(string message)
         {
             if (connectinInfo.TryGetValue(Context.ConnectionId, out var conn))
             {
-                await Clients.Group(conn.roomID).SendAsync("createMessage", message);
+                await Clients.Group(conn.roomID).SendAsync("createMessage", message, conn.username);
             }
         }
 
@@ -42,9 +62,9 @@ namespace PeerJS.Hubs
         {
             if (connectinInfo.TryGetValue(Context.ConnectionId, out var conn))
             {
-                
-                    Clients.Group(conn.roomID).SendAsync("UserDisconnected", conn.peerID);
-                
+
+                Clients.Group(conn.roomID).SendAsync("UserDisconnected", conn.peerID);
+
             }
 
 

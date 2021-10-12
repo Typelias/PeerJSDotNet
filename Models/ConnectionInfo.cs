@@ -9,5 +9,6 @@ namespace PeerJS.Models
     {
         public string roomID { get; set; }
         public string peerID { get; set; }
+        public string username { get; set; }
     }
 }

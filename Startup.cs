@@ -26,6 +26,7 @@ namespace PeerJS
             services.AddSignalR();
             services.AddPeerJsServer();
             services.AddSingleton<Dictionary<string, ConnectionInfo>>(opt => new Dictionary<string, ConnectionInfo>());
+            services.AddSingleton<Dictionary<string, string>>(opt => new Dictionary<string, string>());
         }
 
         readonly string MyAllowSpecificOrigins = "AllowOrigins";
@@ -51,6 +52,7 @@ namespace PeerJS
                 });
 
                 endpoints.MapHub<SignalRHub>("/signalr");
+                endpoints.MapHub<WhiteBoardHub>("/whiteboard");
             });
         }
     }

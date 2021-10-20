@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
 using PeerJS.Hubs;
 using ConnectionInfo = PeerJS.Models.ConnectionInfo;
+using PeerJS.Models;
 
 namespace PeerJS
 {
@@ -27,6 +28,7 @@ namespace PeerJS
             services.AddPeerJsServer();
             services.AddSingleton<Dictionary<string, ConnectionInfo>>(opt => new Dictionary<string, ConnectionInfo>());
             services.AddSingleton<Dictionary<string, string>>(opt => new Dictionary<string, string>());
+            services.AddSingleton<Dictionary<string, RoomInfo>>(opt => new Dictionary<string, RoomInfo>());
         }
 
         readonly string MyAllowSpecificOrigins = "AllowOrigins";

@@ -11,10 +11,12 @@ namespace PeerJS.Hubs
     {
 
         private Dictionary<string, ConnectionInfo> connectinInfo;
+        private Dictionary<string, RoomInfo> roomInfo;
 
-        public SignalRHub(Dictionary<string, ConnectionInfo> info)
+        public SignalRHub(Dictionary<string, ConnectionInfo> info, Dictionary<string, RoomInfo> leader)
         {
             this.connectinInfo = info;
+            this.roomInfo = leader;
         }
 
         public async Task JoinRoom(string roomID, string peerID, string username)
@@ -28,9 +30,35 @@ namespace PeerJS.Hubs
                 username = username
             });
 
+            if(roomInfo.TryGetValue(roomID,out var room))
+            {
+                await Clients.Group(roomID).SendAsync("NewLeader", room.leaderStream);
+            }
+            else
+            {
+                roomInfo.Add(roomID, new RoomInfo { leaderStream = "", roomName = roomID });
+            }
+
+            
+
             await Clients.Group(roomID).SendAsync("UserList", extractRoomList(roomID));
 
-            await Clients.Group(roomID).SendAsync("UserConnected", peerID);
+            await Clients.Group(roomID).SendAsync("UserConnected", peerID, username);
+        }
+
+        public async Task SetLeader(string streamID)
+        {
+            //System.Diagnostics.Debug.WriteLine(streamID);
+            if (connectinInfo.TryGetValue(Context.ConnectionId, out var conn))
+            {
+                if (roomInfo.TryGetValue(conn.roomID, out var info))
+                {
+                    info.leaderStream = streamID;
+                    await Clients.Group(conn.roomID).SendAsync("NewLeader", info.leaderStream);
+                    roomInfo[conn.roomID] = info;
+                }
+                
+            }
         }
 
         private Dictionary<string, string> extractRoomList(string room)
@@ -41,6 +69,10 @@ namespace PeerJS.Hubs
             {
                 if (conn.Value.roomID == room)
                 {
+                    if (ret.ContainsKey(conn.Value.username))
+                    {
+                        ret.Remove(conn.Value.username);
+                    }
                     ret.Add(conn.Value.username, conn.Key);
                 }
             });
